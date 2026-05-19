@@ -40,6 +40,9 @@ php doctor.php --deep       # Deep validation with encoding analysis
 Using Docker or your preferred web server (Apache, Nginx).
 
 ---
+## Wiki
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MrAntares/roBrowserLegacy-Remoteclient-PHP)
 
 ## Diagnostics & Validation
 
