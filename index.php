@@ -151,7 +151,8 @@ if (isset($_POST['filter']) && is_string($_POST['filter'])) {
 /**
  * DIRECT ACCESS
  */
-if (empty($_SERVER['REDIRECT_STATUS']) || $_SERVER['REDIRECT_STATUS'] != 404 || empty($_SERVER['REQUEST_URI'])) {
+// Handle both ErrorDocument 404 and RewriteRule direct access
+if (empty($_SERVER['REQUEST_URI'])) {
     Debug::write('Direct access, no file requested ! You have to request a file (from the url), for example: <a href="data/clientinfo.xml">data/clientinfo.xml</a>', 'error');
     Debug::output();
 }
