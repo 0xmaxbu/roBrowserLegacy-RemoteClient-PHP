@@ -399,7 +399,6 @@ final class Client
 	{
 		$local_path         = self::$path;
 		$local_path        .= str_replace('\\', '/', $path);
-		$local_pathEncoded  = mb_convert_encoding($local_path, 'UTF-8');
 		$grf_path           = str_replace('/', '\\', $path);
 		$content = null;
 
@@ -415,10 +414,10 @@ final class Client
 		}
 
 		// Read from local data folder
-		if (file_exists($local_pathEncoded) && !is_dir($local_pathEncoded) && is_readable($local_pathEncoded)) {
+		if (file_exists($local_path) && !is_dir($local_path) && is_readable($local_path)) {
 			Debug::write('File found at ' . $local_path, 'success');
 
-			$content = file_get_contents($local_pathEncoded);
+			$content = file_get_contents($local_path);
 
 			// Add to cache
 			if (self::$cache !== null && $content !== false) {
