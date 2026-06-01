@@ -434,6 +434,27 @@ final class Client
 			Debug::write('File not found at ' . $local_path);
 		}
 
+		// Try path mapping for disk lookup (for Chinese textures with mojibake paths)
+		if (class_exists('PathMapping')) {
+			$mappedPath = PathMapping::resolve($path);
+			if ($mappedPath !== null) {
+				$mapped_local_path = self::$path;
+				$mapped_local_path .= str_replace('\\', '/', $mappedPath);
+				
+				if (file_exists($mapped_local_path) && !is_dir($mapped_local_path) && is_readable($mapped_local_path)) {
+					Debug::write('File found at mapped path ' . $mapped_local_path, 'success');
+					$content = file_get_contents($mapped_local_path);
+					if (self::$cache !== null && $content !== false) {
+						self::$cache->set($path, $content);
+					}
+					if (self::$AutoExtract) {
+						return self::store($path, $content);
+					}
+					return $content;
+				}
+			}
+		}
+
 		// Use file index for O(1) lookup
 		$normalizedPath = strtolower(str_replace('\\', '/', $path));
 
