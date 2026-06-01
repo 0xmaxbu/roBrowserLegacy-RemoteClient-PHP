@@ -134,36 +134,47 @@ final class PathMapping
         // Normalize path for lookup
         $normalizedPath = self::normalizePath($path);
 
-        // Direct lookup
-        if (isset(self::$mappings[$normalizedPath])) {
-            self::$stats['hits']++;
-            Debug::write("Path mapping hit: {$path} -> " . self::$mappings[$normalizedPath], 'info');
-            return self::$mappings[$normalizedPath];
-        }
+		// Direct lookup
+		if (isset(self::$mappings[$normalizedPath])) {
+			self::$stats['hits']++;
+			Debug::write("Path mapping hit: {$path} -> " . self::$mappings[$normalizedPath], 'info');
+			return self::$mappings[$normalizedPath];
+		}
 
-        // Try lowercase lookup
-        $lowerPath = strtolower($normalizedPath);
-        if (isset(self::$mappings[$lowerPath])) {
-            self::$stats['hits']++;
-            Debug::write("Path mapping hit (lowercase): {$path} -> " . self::$mappings[$lowerPath], 'info');
-            return self::$mappings[$lowerPath];
-        }
+		// Try lowercase lookup
+		$lowerPath = strtolower($normalizedPath);
+		if (isset(self::$mappings[$lowerPath])) {
+			self::$stats['hits']++;
+			Debug::write("Path mapping hit (lowercase): {$path} -> " . self::$mappings[$lowerPath], 'info');
+			return self::$mappings[$lowerPath];
+		}
 
-        // Try with different path separators
-        $backslashPath = str_replace('/', '\\', $normalizedPath);
-        if (isset(self::$mappings[$backslashPath])) {
-            self::$stats['hits']++;
-            return self::$mappings[$backslashPath];
-        }
+		// Try with different path separators
+		$backslashPath = str_replace('/', '\\', $normalizedPath);
+		if (isset(self::$mappings[$backslashPath])) {
+			self::$stats['hits']++;
+			return self::$mappings[$backslashPath];
+		}
 
-        $forwardSlashPath = str_replace('\\', '/', $normalizedPath);
-        if (isset(self::$mappings[$forwardSlashPath])) {
-            self::$stats['hits']++;
-            return self::$mappings[$forwardSlashPath];
-        }
+		$forwardSlashPath = str_replace('\\', '/', $normalizedPath);
+		if (isset(self::$mappings[$forwardSlashPath])) {
+			self::$stats['hits']++;
+			return self::$mappings[$forwardSlashPath];
+		}
 
-        self::$stats['misses']++;
-        return null;
+		// Try prefix/directory matching
+		foreach (self::$mappings as $key => $value) {
+			if (strpos($normalizedPath, $key) === 0) {
+				// Found a prefix match, replace the prefix
+				$mappedPath = $value . substr($normalizedPath, strlen($key));
+				self::$stats['hits']++;
+				Debug::write("Path mapping prefix hit: {$path} -> " . $mappedPath, 'info');
+				return $mappedPath;
+			}
+		}
+
+		self::$stats['misses']++;
+		return null;
     }
 
 
