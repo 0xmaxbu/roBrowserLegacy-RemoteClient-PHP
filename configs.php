@@ -47,7 +47,7 @@
          *
          * Note: it required write access to the data folder.
          */
-        'CLIENT_AUTOEXTRACT'               => getenv('CLIENT_AUTOEXTRACT') ? getenv('CLIENT_AUTOEXTRACT') : true,
+        'CLIENT_AUTOEXTRACT'               => getenv('CLIENT_AUTOEXTRACT') === '1' || strtolower(getenv('CLIENT_AUTOEXTRACT')) === 'true',
 
 
         /**
