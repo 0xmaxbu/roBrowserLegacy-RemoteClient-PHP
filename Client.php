@@ -397,6 +397,9 @@ final class Client
 	 */
 	static public function getFile($path)
 	{
+		// Prevent path traversal: remove parent directory references
+		$path = ltrim(str_replace(['../', '..\\', '\\..', '/..'], '', $path), '/\\');
+
 		$local_path         = self::$path;
 		$local_path        .= str_replace('\\', '/', $path);
 		$grf_path           = str_replace('/', '\\', $path);
