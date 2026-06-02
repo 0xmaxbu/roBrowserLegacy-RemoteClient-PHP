@@ -238,7 +238,9 @@ final class Client
 	{
 		$dir = rtrim(self::$indexCacheConfig['dir'], '/') . '/';
 		if (!is_dir($dir)) {
-			@mkdir($dir, 0777, true);
+			if (!mkdir($dir, 0755, true) && !is_dir($dir)) {
+				throw new \RuntimeException("Failed to create cache directory: {$dir}");
+			}
 		}
 		return $dir . 'index_' . $type . '.cache';
 	}
@@ -630,7 +632,7 @@ final class Client
 	{
 		$out = array();
 
-		$grf_filter = mb_convert_encoding('/' . $filter . '/i', 'UTF-8');
+		$grf_filter = mb_convert_encoding('/' . preg_quote($filter, '/') . '/i', 'UTF-8');
 		foreach (self::$grfs as $grf) {
 
 			if (!$grf->loaded) {
