@@ -458,8 +458,19 @@ final class Client
 		// Use file index for O(1) lookup
 		$normalizedPath = strtolower(str_replace('\\', '/', $path));
 
+		// Try UTF-8 path first
 		if (isset(self::$fileIndex[$normalizedPath])) {
 			$indexEntry = self::$fileIndex[$normalizedPath];
+		} else {
+			// Try converting CP949 to UTF-8 (for clients sending CP949 encoded Korean paths)
+			$utf8Path = @mb_convert_encoding($normalizedPath, 'UTF-8', 'CP949');
+			if ($utf8Path !== false && $utf8Path !== $normalizedPath && isset(self::$fileIndex[$utf8Path])) {
+				$indexEntry = self::$fileIndex[$utf8Path];
+				Debug::write("File found in index with CP949->UTF-8 conversion: {$path} -> {$utf8Path}", 'info');
+			}
+		}
+
+		if (isset($indexEntry)) {
 			$grfIndex = $indexEntry['grfIndex'];
 			$originalPath = $indexEntry['originalPath'];
 			$grf = self::$grfs[$grfIndex];
