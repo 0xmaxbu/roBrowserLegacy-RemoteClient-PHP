@@ -290,7 +290,7 @@ final class Client
 			return false;
 		}
 
-		$data = unserialize($content);
+		$data = unserialize($content, ['allowed_classes' => false]);
 		if (!is_array($data) || !isset($data['key']) || !isset($data['value']) || $data['key'] !== $key) {
 			return false;
 		}
