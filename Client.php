@@ -475,6 +475,18 @@ final class Client
 			}
 		}
 
+		// Try mojibake decoding (Latin-1 -> CP949 -> UTF-8)
+		if (!isset($indexEntry) && class_exists('PathMapping')) {
+			$koreanPath = PathMapping::decodeMojibake($normalizedPath);
+			if ($koreanPath !== null && $koreanPath !== $normalizedPath) {
+				$koreanNormalized = strtolower(str_replace('\\', '/', $koreanPath));
+				if (isset(self::$fileIndex[$koreanNormalized])) {
+					$indexEntry = self::$fileIndex[$koreanNormalized];
+					Debug::write("File found in index with mojibake decode: {$path} -> {$koreanNormalized}", 'info');
+				}
+			}
+		}
+
 		if (isset($indexEntry)) {
 			$grfIndex = $indexEntry['grfIndex'];
 			$originalPath = $indexEntry['originalPath'];
