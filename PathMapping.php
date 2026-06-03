@@ -245,13 +245,30 @@ final class PathMapping
         }
 
         try {
-            // Try to convert: UTF-8 (mojibake) -> Latin1 (raw bytes) -> CP949 -> UTF-8
+            // Try 1: UTF-8 (mojibake) -> ISO-8859-1 (raw bytes) -> CP949 -> UTF-8
             $latin1 = mb_convert_encoding($mojibake, 'ISO-8859-1', 'UTF-8');
             $korean = @mb_convert_encoding($latin1, 'UTF-8', 'CP949');
             
-            // Check if result contains valid Korean
             if ($korean && self::containsKorean($korean)) {
                 return $korean;
+            }
+            
+            // Try 2: UTF-8 -> Windows-1252 -> CP949 -> UTF-8
+            $win1252 = mb_convert_encoding($mojibake, 'Windows-1252', 'UTF-8');
+            $korean2 = @mb_convert_encoding($win1252, 'UTF-8', 'CP949');
+            
+            if ($korean2 && self::containsKorean($korean2)) {
+                return $korean2;
+            }
+            
+            // Try 3: Fix common encoding errors (þ -> ¾, etc.)
+            $fixed = str_replace([chr(254), chr(255)], [chr(190), chr(191)], $latin1);
+            if ($fixed !== $latin1) {
+                $korean3 = @mb_convert_encoding($fixed, 'UTF-8', 'CP949');
+                if ($korean3) {
+                    // Skip containsKorean check - trust the conversion
+                    return $korean3;
+                }
             }
         } catch (Exception $e) {
             // Conversion failed

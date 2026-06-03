@@ -476,9 +476,31 @@ final class Client
 		}
 
 		// Try mojibake decoding (Latin-1 -> CP949 -> UTF-8)
-		if (!isset($indexEntry) && class_exists('PathMapping')) {
-			$koreanPath = PathMapping::decodeMojibake($normalizedPath);
-			if ($koreanPath !== null && $koreanPath !== $normalizedPath) {
+		if (!isset($indexEntry)) {
+			$koreanPath = null;
+			
+			// Direct decode: UTF-8 mojibake -> ISO-8859-1 bytes -> CP949 -> UTF-8 Korean
+			$latin1Bytes = @mb_convert_encoding($normalizedPath, 'ISO-8859-1', 'UTF-8');
+			if ($latin1Bytes) {
+				// Try 1: Fix common byte errors first (þ -> ¾, etc.)
+				$fixedBytes = str_replace([chr(254), chr(255)], [chr(190), chr(191)], $latin1Bytes);
+				if ($fixedBytes !== $latin1Bytes) {
+					$decoded = @mb_convert_encoding($fixedBytes, 'UTF-8', 'CP949');
+					if ($decoded && preg_match('/[\x{AC00}-\x{D7AF}]/u', $decoded)) {
+						$koreanPath = $decoded;
+					}
+				}
+				
+				// Try 2: Standard decode (for correct mojibake)
+				if (!$koreanPath) {
+					$decoded = @mb_convert_encoding($latin1Bytes, 'UTF-8', 'CP949');
+					if ($decoded && preg_match('/[\x{AC00}-\x{D7AF}]/u', $decoded)) {
+						$koreanPath = $decoded;
+					}
+				}
+			}
+			
+			if ($koreanPath !== null) {
 				$koreanNormalized = strtolower(str_replace('\\', '/', $koreanPath));
 				if (isset(self::$fileIndex[$koreanNormalized])) {
 					$indexEntry = self::$fileIndex[$koreanNormalized];
