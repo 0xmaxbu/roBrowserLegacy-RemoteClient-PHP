@@ -159,8 +159,44 @@ if (empty($_SERVER['REQUEST_URI'])) {
 
 
 // Decode path
-$path      = str_replace('\\', '/', mb_convert_encoding(urldecode($_SERVER['REQUEST_URI']),'UTF-8'));
-$path      = preg_replace('/\?.*/', '', $path); // remove query
+$path_raw  = urldecode($_SERVER['REQUEST_URI']);
+
+// Try to detect encoding and convert to UTF-8
+$path_utf8 = null;
+
+// Method 1: Check if already valid UTF-8 with Korean chars
+$tmp = @mb_convert_encoding($path_raw, 'UTF-8', 'UTF-8');
+if ($tmp !== false && preg_match('/[\x{AC00}-\x{D7AF}\x{4e00}-\x{9fff}]/u', $tmp)) {
+    $path_utf8 = $tmp;
+}
+
+// Method 2: Try CP949 decoding (for Korean byte-encoded paths like %BE%C6%C0%CC%C5%DB)
+if (!$path_utf8) {
+    $tmp = @mb_convert_encoding($path_raw, 'UTF-8', 'CP949');
+    if ($tmp !== false && preg_match('/[\x{AC00}-\x{D7AF}]/u', $tmp)) {
+        $path_utf8 = $tmp;
+    }
+}
+
+// Method 3: Try GBK decoding (for Chinese paths)
+if (!$path_utf8) {
+    $tmp = @mb_convert_encoding($path_raw, 'UTF-8', 'GBK');
+    if ($tmp !== false && preg_match('/[\x{4e00}-\x{9fff}]/u', $tmp)) {
+        $path_utf8 = $tmp;
+    }
+}
+
+// Method 4: Treat as ISO-8859-1 / Mojibake
+if (!$path_utf8) {
+    $tmp = @mb_convert_encoding($path_raw, 'UTF-8', 'ISO-8859-1');
+    if ($tmp !== false) {
+        $path_utf8 = $tmp;
+    }
+}
+
+$path = $path_utf8 ?: $path_raw;
+$path = str_replace('\\', '/', $path);
+$path = preg_replace('/\?.*/', '', $path); // remove query
 $directory = basename(dirname(__FILE__));
 
 // Check Allowed directory
