@@ -316,6 +316,19 @@ final class PathMapping
 
 
     /**
+     * Reset statistics counters
+     */
+    static public function resetStats()
+    {
+        self::$stats = [
+            'lookups' => 0,
+            'hits' => 0,
+            'misses' => 0,
+        ];
+    }
+
+
+    /**
      * Get statistics
      *
      * @return array
@@ -323,7 +336,7 @@ final class PathMapping
     static public function getStats()
     {
         $total = self::$stats['hits'] + self::$stats['misses'];
-        $hitRate = $total > 0 ? round(($stats['hits'] / $total) * 100, 2) : 0;
+        $hitRate = $total > 0 ? round((self::$stats['hits'] / $total) * 100, 2) : 0;
 
         return [
             'enabled' => self::$enabled,
