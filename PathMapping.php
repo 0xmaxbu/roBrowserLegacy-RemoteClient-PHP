@@ -245,30 +245,52 @@ final class PathMapping
         }
 
         try {
-            // Try 1: UTF-8 (mojibake) -> ISO-8859-1 (raw bytes) -> CP949 -> UTF-8
-            $latin1 = mb_convert_encoding($mojibake, 'ISO-8859-1', 'UTF-8');
-            $korean = @mb_convert_encoding($latin1, 'UTF-8', 'CP949');
+            // Split path into components to avoid corrupting non-mojibake parts
+            $parts = explode('/', $mojibake);
+            $hasChange = false;
             
-            if ($korean && self::containsKorean($korean)) {
-                return $korean;
-            }
-            
-            // Try 2: UTF-8 -> Windows-1252 -> CP949 -> UTF-8
-            $win1252 = mb_convert_encoding($mojibake, 'Windows-1252', 'UTF-8');
-            $korean2 = @mb_convert_encoding($win1252, 'UTF-8', 'CP949');
-            
-            if ($korean2 && self::containsKorean($korean2)) {
-                return $korean2;
-            }
-            
-            // Try 3: Fix common encoding errors (þ -> ¾, etc.)
-            $fixed = str_replace([chr(254), chr(255)], [chr(190), chr(191)], $latin1);
-            if ($fixed !== $latin1) {
-                $korean3 = @mb_convert_encoding($fixed, 'UTF-8', 'CP949');
-                if ($korean3) {
-                    // Skip containsKorean check - trust the conversion
-                    return $korean3;
+            foreach ($parts as $i => $part) {
+                // Only decode parts that contain mojibake patterns
+                if (preg_match('/[À-ÿ]{2,}/u', $part)) {
+                    // Try 1: UTF-8 (mojibake) -> ISO-8859-1 (raw bytes) -> CP949 -> UTF-8
+                    $latin1 = @mb_convert_encoding($part, 'ISO-8859-1', 'UTF-8');
+                    if ($latin1) {
+                        $korean = @mb_convert_encoding($latin1, 'UTF-8', 'CP949');
+                        if ($korean && self::containsKorean($korean)) {
+                            $parts[$i] = $korean;
+                            $hasChange = true;
+                            continue;
+                        }
+                    }
+                    
+                    // Try 2: UTF-8 -> Windows-1252 -> CP949 -> UTF-8
+                    $win1252 = @mb_convert_encoding($part, 'Windows-1252', 'UTF-8');
+                    if ($win1252) {
+                        $korean2 = @mb_convert_encoding($win1252, 'UTF-8', 'CP949');
+                        if ($korean2 && self::containsKorean($korean2)) {
+                            $parts[$i] = $korean2;
+                            $hasChange = true;
+                            continue;
+                        }
+                    }
+                    
+                    // Try 3: Fix common encoding errors (þ -> ¾, etc.)
+                    if ($latin1) {
+                        $fixed = str_replace([chr(254), chr(255)], [chr(190), chr(191)], $latin1);
+                        if ($fixed !== $latin1) {
+                            $korean3 = @mb_convert_encoding($fixed, 'UTF-8', 'CP949');
+                            if ($korean3) {
+                                $parts[$i] = $korean3;
+                                $hasChange = true;
+                                continue;
+                            }
+                        }
+                    }
                 }
+            }
+            
+            if ($hasChange) {
+                return implode('/', $parts);
             }
         } catch (Exception $e) {
             // Conversion failed

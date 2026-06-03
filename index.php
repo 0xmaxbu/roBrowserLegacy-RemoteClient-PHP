@@ -165,14 +165,12 @@ $path_raw  = urldecode($_SERVER['REQUEST_URI']);
 if (mb_check_encoding($path_raw, 'UTF-8')) {
     $path = $path_raw;
     
-    // If valid UTF-8 but no CJK/Korean chars, might be mojibake (Latin-1 as UTF-8)
-    if (!preg_match('/[\x{4e00}-\x{9fff}\x{AC00}-\x{D7AF}]/u', $path)) {
-        // Fix common encoding mismatches (Ń -> Å from browser encoding differences)
-        $fixed = str_replace("Ń", "Å", $path);
-        $decoded = PathMapping::decodeMojibake($fixed);
-        if ($decoded !== null) {
-            $path = $decoded;
-        }
+    // Always try to decode mojibake parts in the path
+    // (decodeMojibake now safely handles mixed paths with both mojibake and real Korean)
+    $fixed = str_replace("Ń", "Å", $path);
+    $decoded = PathMapping::decodeMojibake($fixed);
+    if ($decoded !== null) {
+        $path = $decoded;
     }
 } else {
     // Try CP949 decoding (for Korean byte-encoded paths like %BE%C6%C0%CC%C5%DB)
